@@ -1,0 +1,29 @@
+{
+	"name": "memcached4d",
+	"description": "A minimal memcached client.",
+	"copyright": "Copyright © 2014, Tiberiu Gal",
+	"authors": ["Tiberiu Gal"],
+	"dependencies": {
+        "vibe-d" :"~master",
+	},
+	"configurations": [
+		{
+			"targetType": "executable",
+			"versions": [
+				"VibeCustomMain"
+			],
+			"name": "application"
+		},
+		{
+			"excludedSourceFiles": [
+				"source/app.d"
+			],
+			"targetType": "library",
+			"name": "library"
+		}
+	],
+	"homepage": "https://github.com/TiberiuGal/memcached4d",
+	"sourcePaths": [
+		"source/"
+	],
+}
