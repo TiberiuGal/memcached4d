@@ -1,5 +1,13 @@
 ﻿module memcached4d;
 
+// TODO: memcached cluster
+//	documentation
+// 	unit tests
+//  add expiration info
+//  error handling and reporting
+//  optionally implement all commands
+
+
 import std.stdio;
 import std.string;
 import std.conv;
@@ -19,12 +27,10 @@ struct MemcachedServer {
 
 alias MemcachedServer[] MemcachedServers;
 
-// TODO: memcached cluster
-//	documentation
-// unit tests
 
 
 /**
+ * Use this to connectect to a memcached cluster
  * 
  * 
 */
@@ -41,12 +47,26 @@ class MemcachedCluster {
 
 
 	void store(T)(string key, T data){
-		
+		// compute hash
+		// determine server 
+		// connect client to server
+		// return client.store 
+	}
+
+	T get(T)(string key) {
+		// compute hash
+		// determine server 
+		// connect client to server
+		// return client.get 
 	}
 
 }
 
-
+/**
+ * Use this to connect and query a memcached server
+ * 
+ * 
+ */ 
 class MemcachedClient {
 	TCPConnection conn;
 	protected MemcachedServer server;
@@ -60,7 +80,9 @@ class MemcachedClient {
 	this(MemcachedServer server){
 		this.server = server;
 	}
-	
+
+
+
 	void connect() {
 		if (!conn || !conn.connected) {
 			try conn = connectTCP(server.host, server.port);
@@ -69,8 +91,13 @@ class MemcachedClient {
 			}
 		}
 	}
-	
-	void store(T)(string key, T data) {
+
+
+	/**
+	 * store a data 
+	 * 
+	 */
+	void store(T)(string key, T data, int expires = 0) {
 		connect();
 
 		alias Unqual!T Unqualified;
@@ -91,9 +118,11 @@ class MemcachedClient {
 		} else  {
 			value = serialize!JsonSerializer(data).toString;
 		}
-		conn.write("set " ~ key ~ " 0 0 " ~ value.length.to!string ~ "\r\n" ~ value ~"\r\n");
+		conn.write( format("set %s 0 %s %s\r\n%s\r\n", key, expires, value.length.to!string, value) );
 		
-
+		//auto retval = cast(string) conn.readLine();
+		//if(retval == "STORED") ;
+		//if(retval == "ERROR") ;
 	}
 
 	T get(T)(string key){
