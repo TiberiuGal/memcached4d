@@ -93,6 +93,7 @@ class MemcachedClient {
 	}
 
 
+
 	/**
 	 * store a data 
 	 * 
@@ -124,6 +125,66 @@ class MemcachedClient {
 		//if(retval == "STORED") ;
 		//if(retval == "ERROR") ;
 	}
+
+	void remove(string key, int time = 0){
+		connect();
+		conn.write( format("delete %s %s\r\n", key, time));
+		conn.readLine;
+	}
+	
+	void increment(string key, int inc){
+		connect();
+		conn.write( format("incr %s %s\r\n", key, inc));
+		conn.readLine;
+	}
+	alias increment incr;
+	
+	
+	void decrement(string key, int dec){
+		connect();
+		conn.write( format("decr %s %s\r\n", key, dec));
+		conn.readLine;
+	}
+	alias decrement decr;
+	
+	
+	void touch(string key, int expires){
+		connect();
+		conn.write( format("touch %s %s\r\n", key, expires) );
+		conn.readLine();
+	}
+
+
+
+	void remove(string key, int time = 0){
+		connect();
+		conn.write( format("delete %s %s\r\n", key, time));
+		conn.readLine;
+	}
+	alias remove del;
+
+	void increment(string key, int inc){
+		connect();
+		conn.write( format("incr %s %s\r\n", key, inc));
+		conn.readLine;
+	}
+	alias increment incr;
+	
+	
+	void decrement(string key, int dec){
+		connect();
+		conn.write( format("decr %s %s\r\n", key, dec));
+		conn.readLine;
+	}
+	alias decrement decr;
+	
+	
+	void touch(string key, int expires){
+		connect();
+		conn.write( format("touch %s %s\r\n", key, expires) );
+		conn.readLine();
+	}
+
 
 	T get(T)(string key){
 		connect();
