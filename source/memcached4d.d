@@ -9,8 +9,10 @@
 
 
 import std.stdio;
-import std.string;
-import std.conv;
+import std.string, 
+	std.conv,
+	std.digest.md;
+
 
 
 import vibe.core.net,
@@ -28,10 +30,12 @@ struct MemcachedServer {
 alias MemcachedServer[] MemcachedServers;
 
 
-
 /**
  * Use this to connectect to a memcached cluster
- * 
+ * this is confusing, but ...
+ * a MemcachedCluster is a a client to a cluser of server
+ * it holds a collection of clients ( each client connects to one server )
+ * so client and server here are used interchangeably - but they mean the same thing.
  * 
 */
 class MemcachedCluster {
@@ -46,18 +50,69 @@ class MemcachedCluster {
 	}
 
 
-	void store(T)(string key, T data){
-		// compute hash
-		// determine server 
-		// connect client to server
-		// return client.store 
+
+	/**
+	 *  store the value with one of the server
+	 * 
+	 *  compute hash
+	 *  determine server 
+	 *	connect client to server
+	 *	run client.store
+	*/
+	void store(T)(string key, T data, int expires = 0){
+		return getServer.get(key, data, expires);
 	}
 
+
+	/**
+	 * 	get the value form one of the servers
+	 * 
+	 *  compute hash
+	 *  determine server 
+	 *	connect client to server
+	 *	return client.get
+	*/
 	T get(T)(string key) {
-		// compute hash
-		// determine server 
-		// connect client to server
-		// return client.get 
+		return getServer.get(key);
+	}
+
+	void remove(string key, int time = 0){
+		getServer(key).remove(key, time);
+	}
+	alias remove del;
+	
+	void increment(string key, int inc){
+		getServer(key).increment(key, inc);
+	}
+	alias increment incr;	
+	
+	void decrement(string key, int dec){
+		getServer(key).decrement(key, dec);
+	}
+	alias decrement decr;	
+	
+	void touch(string key, int expires){
+		getServer(key).touch(key, expires); 
+	}
+
+
+
+	MemcachedClient getServer(string key) {
+		return   clients[ determineServer(key) ];
+	}
+
+	int determineServer(string key){
+		return equalWeights(key);
+	}
+
+	/**
+	 * use this for sharding - when all servers have equal weights	 * 
+	 * 
+	 * hash the key, get the last byte
+	 * get the modulo of that last byte to the length of servers
+	 */ 
+	int equalWeights(string key){
+		return md5Of(key)[$-1] % clients.length;
 	}
 
 }
@@ -121,37 +176,9 @@ class MemcachedClient {
 		}
 		conn.write( format("set %s 0 %s %s\r\n%s\r\n", key, expires, value.length.to!string, value) );
 		
-		//auto retval = cast(string) conn.readLine();
+		auto retval = cast(string) conn.readLine();
 		//if(retval == "STORED") ;
 		//if(retval == "ERROR") ;
-	}
-
-	void remove(string key, int time = 0){
-		connect();
-		conn.write( format("delete %s %s\r\n", key, time));
-		conn.readLine;
-	}
-	
-	void increment(string key, int inc){
-		connect();
-		conn.write( format("incr %s %s\r\n", key, inc));
-		conn.readLine;
-	}
-	alias increment incr;
-	
-	
-	void decrement(string key, int dec){
-		connect();
-		conn.write( format("decr %s %s\r\n", key, dec));
-		conn.readLine;
-	}
-	alias decrement decr;
-	
-	
-	void touch(string key, int expires){
-		connect();
-		conn.write( format("touch %s %s\r\n", key, expires) );
-		conn.readLine();
 	}
 
 
@@ -202,6 +229,8 @@ class MemcachedClient {
 
 		} while( true); 
 
+		//writefln("dumping data for key %s = {%s}", key, tmp.data);
+
 		static if(is(Unqualified: string)){
 			return tmp.data;
 		}else static if(is(Unqualified : int) 
@@ -210,7 +239,8 @@ class MemcachedClient {
 		                || is(Unqualified == float)
 		                || is(Unqualified : long)
 		                ){
-			return tmp.data.to!T;
+
+			return chomp(tmp.data).to!T;
 		} else {
 			Json j = parseJsonString( tmp.data);
 			return deserializeJson!T(j);
