@@ -1,6 +1,5 @@
 {
 	"name": "memcached4d",
-	"version": "1.0.0",
 	"description": "A minimal memcached client.",
 	"copyright": "Copyright © 2014, Tiberiu Gal",
 	"license": "MIT",
