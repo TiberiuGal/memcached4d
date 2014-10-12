@@ -5,7 +5,7 @@
 	"license": "MIT",
 	"authors": ["Tiberiu Gal"],
 	"dependencies": {
-        "vibe-d" :"~master",
+        	"vibe-d" :">=0.7.21-rc.2",
 	},
 	"configurations": [
 		{
